@@ -18,6 +18,8 @@ jobs:
 
     - name: Log in to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
+      with:
+        region: us-east-1 # Specify your AWS region here
 
     - name: Build and Push Docker image to Amazon ECR
       env:
@@ -36,7 +38,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Kubernetes Kubeconfig
+    - name: Set up AWS Credentials for kubectl
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -48,7 +50,10 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
+        # Decode and configure kubectl
         echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
         export KUBECONFIG=kubeconfig
+        
+        # Update deployment image and monitor the rollout
         kubectl set image deployment/node-app-deployment node-app=$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} -n default
         kubectl rollout status deployment/node-app-deployment -n default
