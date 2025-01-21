@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/my-node-app:latest
+        image: 241533126175.dkr.ecr.us-east-1.amazonaws.com/my-node-app:latest
         ports:
         - containerPort: 3000
