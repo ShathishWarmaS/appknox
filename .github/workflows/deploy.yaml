@@ -25,7 +25,7 @@ jobs:
       env:
         ECR_REGISTRY: 241533126175.dkr.ecr.us-east-1.amazonaws.com
         ECR_REPOSITORY: my-node-app
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: ${{ github.sha }}  # Use commit SHA as the image tag
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -54,6 +54,6 @@ jobs:
         echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
         export KUBECONFIG=kubeconfig
         
-        # Update deployment image and monitor the rollout
+        # Update deployment image with commit SHA tag and monitor the rollout
         kubectl set image deployment/node-app-deployment node-app=$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} -n default
         kubectl rollout status deployment/node-app-deployment -n default
