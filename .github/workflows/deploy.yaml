@@ -35,7 +35,9 @@ jobs:
       run: |
         cd my-node-app
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,12 +57,17 @@ jobs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@v1
 
-    - name: Deploy to Kubernetes
+    - name: Check ECR and K8s Variables
       run: |
+        echo "ECR_REGISTRY: $ECR_REGISTRY"
+        echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+        echo "IMAGE_TAG: $IMAGE_TAG"
         echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
         export KUBECONFIG=kubeconfig
-        # Update the Kubernetes deployment with the new image
-        #kubectl set image deployment/node-app-deployment node-app=$ECR_REGISTRY/$ECR_REPOSITORY:latest -n default
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl config view
+        kubectl get nodes
         kubectl set image deployment/node-app-deployment node-app=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -n default
-        # Check rollout status
         kubectl rollout status deployment/node-app-deployment -n default
