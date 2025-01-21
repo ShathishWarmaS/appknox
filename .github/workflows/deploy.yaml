@@ -19,6 +19,11 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+      with:
+        region: us-east-1  # AWS region where your ECR is hosted
+        mask-password: true
+        registry-type: private
+        skip-logout: false
 
     - name: Build, tag, and push Docker image to Amazon ECR
       env:
@@ -26,10 +31,7 @@ jobs:
         REPOSITORY: my-ecr-repo
         IMAGE_TAG: ${{ github.sha }}  # Unique image tag based on the commit SHA
       run: |
-        # Build the Docker image and tag it with the commit SHA
         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-        
-        # Push the Docker image to ECR with the tag
         docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
   deploy:
@@ -52,12 +54,7 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        # Decode and configure kubectl from GitHub Secrets
         echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
         export KUBECONFIG=kubeconfig
-        
-        # Update the deployment with the new image using the commit SHA tag
         kubectl set image deployment/node-app-deployment node-app=$REGISTRY/$REPOSITORY:${{ github.sha }} -n default
-        
-        # Wait for the deployment to roll out successfully
         kubectl rollout status deployment/node-app-deployment -n default
