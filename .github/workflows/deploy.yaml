@@ -31,14 +31,11 @@ jobs:
       env:
         ECR_REGISTRY: 241533126175.dkr.ecr.us-east-1.amazonaws.com
         ECR_REPOSITORY: my-node-app
-        IMAGE_TAG: latest  # Set the IMAGE_TAG to latest
+        IMAGE_TAG: latest
       run: |
-        echo "Building Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
         cd my-node-app
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG  # Push the 'latest' tag
-        echo "Docker image pushed to: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,5 +59,7 @@ jobs:
       run: |
         echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
         export KUBECONFIG=kubeconfig
+        # Update the Kubernetes deployment with the new image
         kubectl set image deployment/node-app-deployment node-app=$ECR_REGISTRY/$ECR_REPOSITORY:latest -n default
+        # Check rollout status
         kubectl rollout status deployment/node-app-deployment -n default
